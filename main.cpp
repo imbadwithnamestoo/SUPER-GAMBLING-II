@@ -1,154 +1,193 @@
 #include <iostream>
-#include <vector>
+#include <fstream>
+#include <cstdlib>
+#include <ctime>
 #include <string>
-#include <numeric>
-#include <random>
-#include <algorithm>
+#include <vector>
 
-struct Card {
-    std::string suit;
-    std::string rank;
-    int value;
-};
+#include "src/Game.h"
+#include "src/UI.h"
+#include "src/Shop.h"
+#include "src/Profile.h"
+#include "src/Player.h"
+#include "src/Utils.h"
 
-std::vector<Card> createDeck() {
-    std::vector<Card> deck;
-    std::vector<std::string> suits = {"Hearts", "Diamonds", "Clubs", "Spades"};
-    std::vector<std::string> ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"};
+void showIntro() {
+    clear();
+    int termWidth = getTerminalWidth();
+    int boxWidth = std::min(60, termWidth - 4);
+    int leftPadding = (termWidth - boxWidth) / 2;
     
-    for (const auto& suit : suits) {
-        for (size_t i = 0; i < ranks.size(); ++i) {
-            int val = 0;
-            if (i < 9) {
-                val = std::stoi(ranks[i]);
-            } else if (ranks[i] == "Ace") {
-                val = 11;
-            } else {
-                val = 10;
-            }
-            deck.push_back({suit, ranks[i], val});
-        }
-    }
-    return deck;
+    std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
+    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+    
+    std::string line1 = "You owe us. 100 grand. You know why. You know the terms.";
+    printBoxLine(T_INFO + line1 + T_RESET, boxWidth, leftPadding);
+    
+    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+    std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+    
+    std::cout << std::string(leftPadding, ' ') << "Press Enter to continue...";
+    _getch();
+    
+    clear();
+    
+    std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
+    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+    
+    std::string line2 = "Get to work, kid.";
+    printBoxLine(T_INFO + line2 + T_RESET, boxWidth, leftPadding);
+    
+    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+    std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+    
+    std::cout << std::string(leftPadding, ' ') << "Press Enter to continue...";
+    _getch();
 }
 
-void shuffleDeck(std::vector<Card>& deck) {
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(deck.begin(), deck.end(), g);
-}
-
-void dealCard(std::vector<Card>& deck, std::vector<Card>& hand) {
-    hand.push_back(deck.back());
-    deck.pop_back();
-}
-
-int calculateScore(const std::vector<Card>& hand) {
-    int total = 0;
-    int aceCount = 0;
+void viewBadges() {
+    clear();
+    int termWidth = getTerminalWidth();
+    int boxWidth = std::min(60, termWidth - 4);
+    int leftPadding = (termWidth - boxWidth) / 2;
     
-    for (const auto& card : hand) {
-        total += card.value;
-        if (card.rank == "Ace") {
-            aceCount++;
-        }
-    }
+    std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
     
-    while (total > 21 && aceCount > 0) {
-        total -= 10;
-        aceCount--;
-    }
+    std::string title = " ACHIEVEMENTS ";
+    printBoxLine(T_TITLE + title + T_RESET, boxWidth, leftPadding);
     
-    return total;
-}
-
-void displayHand(const std::vector<Card>& hand, const std::string& owner, bool hideFirstCard = false) {
-    std::cout << owner << "'s hand: ";
-    if (hideFirstCard && hand.size() > 0) {
-        std::cout << "[Hidden Card], ";
-        for (size_t i = 1; i < hand.size(); ++i) {
-            std::cout << hand[i].rank << " of " << hand[i].suit << (i == hand.size() - 1 ? "" : ", ");
-        }
-        std::cout << "\n";
-    } else {
-        for (size_t i = 0; i < hand.size(); ++i) {
-            std::cout << hand[i].rank << " of " << hand[i].suit << (i == hand.size() - 1 ? "" : ", ");
-        }
-        std::cout << " (Total: " << calculateScore(hand) << ")\n";
-    }
+    std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
+    
+    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+    printBoxLine("Coming Soon", boxWidth, leftPadding);
+    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+    
+    std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
+    
+    std::string hint = "Press Enter to return";
+    printBoxLine(hint, boxWidth, leftPadding);
+    
+    std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+    
+    _getch();
 }
 
 int main() {
-    std::cout << "=== Welcome to Basic C++ Blackjack ===\n\n";
+    clear();
+    flushInput();
+    std::srand(std::time(0));
     
-    std::vector<Card> deck = createDeck();
-    shuffleDeck(deck);
-    
-    std::vector<Card> playerHand;
-    std::vector<Card> dealerHand;
-    
-    dealCard(deck, playerHand);
-    dealCard(deck, dealerHand);
-    dealCard(deck, playerHand);
-    dealCard(deck, dealerHand);
-    
-    char choice;
-    while (true) {
-        displayHand(playerHand, "Player");
-        displayHand(dealerHand, "Dealer", true);
-        
-        int playerScore = calculateScore(playerHand);
-        if (playerScore >= 21) {
-            break;
-        }
-        
-        std::cout << "Do you want to (h)it or (s)tand? ";
-        std::cin >> choice;
-        std::cout << "\n";
-        
-        if (choice == 'h' || choice == 'H') {
-            dealCard(deck, playerHand);
-            std::cout << "You chose to hit!\n";
-        } else if (choice == 's' || choice == 'S') {
-            std::cout << "You chose to stand.\n";
-            break;
-        } else {
-            std::cout << "Invalid choice. Please enter 'h' or 's'.\n";
-        }
-    }
-    
-    int playerScore = calculateScore(playerHand);
-    
-    if (playerScore > 21) {
-        displayHand(playerHand, "Player");
-        std::cout << "\n*** You busted! Dealer wins. ***\n";
-        return 0;
-    }
-    
-    std::cout << "\n--- Dealer's Turn ---\n";
-    displayHand(dealerHand, "Dealer");
-    
-    while (calculateScore(dealerHand) < 17) {
-        std::cout << "Dealer hits...\n";
-        dealCard(deck, dealerHand);
-        displayHand(dealerHand, "Dealer");
-    }
-    
-    int dealerScore = calculateScore(dealerHand);
-    
-    std::cout << "\n=== Final Results ===\n";
-    std::cout << "Player Total: " << playerScore << "\n";
-    std::cout << "Dealer Total: " << dealerScore << "\n\n";
-    
-    if (dealerScore > 21) {
-        std::cout << "*** Dealer busted! You win! ***\n";
-    } else if (playerScore > dealerScore) {
-        std::cout << "*** You win! ***\n";
-    } else if (playerScore < dealerScore) {
-        std::cout << "*** Dealer wins. ***\n";
+    bool isNewGame = false;
+    std::ifstream checkFile("save.txt");
+    if (checkFile.is_open()) {
+        checkFile.close();
+        loadGame();
     } else {
-        std::cout << "*** It's a tie (push)! ***\n";
+        isNewGame = true;
+        saveGame();
     }
     
+    if (isNewGame) {
+        showIntro();
+    }
+
+    int selected = 1;
+    while (true) {
+        clear();
+        bool choiceMade = false;
+        while (!choiceMade) {
+            resetCursor();
+            int termWidth = getTerminalWidth();
+            int boxWidth = std::min(60, termWidth - 4);
+            int leftPadding = (termWidth - boxWidth) / 2;
+
+            std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
+
+            std::string title = " SUPER GAMBLING II ";
+            printBoxLine(T_TITLE + title + T_RESET, boxWidth, leftPadding);
+
+            std::string chipsDisplay = formatNumber(totalChips);
+            std::string debtDisplay = formatNumber(totalDebt);
+            std::string stats = " Chips: " + T_PRICE + chipsDisplay + T_RESET + " | Debt: " + T_LOSS + debtDisplay + T_RESET + " ";
+            printBoxLine(stats, boxWidth, leftPadding);
+
+            std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
+
+            std::vector<std::string> options = {
+                "Start",
+                "Black Market",
+                "Profile",
+                "Achievements",
+                "Quit"
+            };
+
+            int innerWidth = boxWidth - 2;
+
+            for (size_t i = 0; i < options.size(); ++i) {
+                bool selectedOption = selected == static_cast<int>(i) + 1;
+                int textLen = visibleLength(options[i]);
+
+                if (selectedOption) {
+                    std::string color = (i == 4) ? T_LOSS : T_WIN;
+                    std::string item = color + "► " + options[i] + " ◄" + T_RESET;
+                    int itemLen = visibleLength(item);
+                    int leftSpace = (innerWidth - itemLen) / 2;
+                    int rightSpace = innerWidth - itemLen - leftSpace;
+
+                    if (leftSpace < 0) leftSpace = 0;
+                    if (rightSpace < 0) rightSpace = 0;
+
+                    std::string displayText = repeatStr(" ", leftSpace) + item + repeatStr(" ", rightSpace);
+
+                    std::cout << std::string(leftPadding, ' ') << "║" << displayText << "║" << std::endl;
+                } else {
+                    int leftSpace = (innerWidth - textLen) / 2;
+                    int rightSpace = innerWidth - textLen - leftSpace;
+
+                    if (leftSpace < 0) leftSpace = 0;
+                    if (rightSpace < 0) rightSpace = 0;
+
+                    std::string displayText = repeatStr(" ", leftSpace) + options[i] + repeatStr(" ", rightSpace);
+
+                    std::cout << std::string(leftPadding, ' ') << "║" << displayText << "║" << std::endl;
+                }
+            }
+
+            std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
+
+            std::string hint = "Arrow keys to navigate | Enter to select";
+            printBoxLine(hint, boxWidth, leftPadding);
+
+            std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+
+            int input = _getch();
+            if (input == 224 || input == 27) {
+                int arrow = _getch();
+                if (input == 27 && arrow == 91) {
+                    arrow = _getch();
+                }
+                if (arrow == 72 || arrow == 'A') {
+                    if (selected > 1) selected--;
+                    else selected = 5;
+                } else if (arrow == 80 || arrow == 'B') {
+                    if (selected < 5) selected++;
+                    else selected = 1;
+                }
+            } else if (input == 13 || input == 10) {
+                choiceMade = true;
+            }
+        }
+        if (selected == 1) {
+            playBlackjackGame();
+        } else if (selected == 2) {
+            openStore();
+        } else if (selected == 3) {
+            viewProfile();
+        } else if (selected == 4) {
+            viewBadges();
+        } else if (selected == 5) {
+            break;
+        }
+    }
     return 0;
 }
