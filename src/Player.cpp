@@ -13,7 +13,7 @@ int gamesWon = 0;
 int gamesLost = 0;
 bool hasBeatenGame = false;
 
-static const std::string SAVE_KEY = "SuperGamblingII_secret_key_2025";
+static const std::string SAVE_KEY = "SuperGamblingII";
 
 std::string xorCipher(const std::string& data, const std::string& key) {
     std::string result = data;
