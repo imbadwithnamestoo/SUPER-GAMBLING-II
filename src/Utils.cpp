@@ -4,9 +4,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <cstdio>
+#include <cctype>
+#include <limits>
 
 #ifdef _WIN32
-#include <conio.h>
 #include <windows.h>
 #else
 #include <termios.h>
@@ -44,6 +45,44 @@ void flushInput() {
 #else
     tcflush(STDIN_FILENO, TCIFLUSH);
 #endif
+}
+
+bool readInt(int& out) {
+    std::string input;
+    std::cin >> input;
+
+    if (input.empty()) {
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return false;
+    }
+
+    for (char c : input) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            return false;
+        }
+    }
+
+    try {
+        out = std::stoi(input);
+    } catch (...) {
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return false;
+    }
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    return true;
+}
+
+std::string sanitizeName(const std::string& input) {
+    std::string result;
+    for (char c : input) {
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+            result += c;
+        }
+        if (result.length() >= 8) break;
+    }
+    return result;
 }
 
 void typewriterPrint(const std::string& text, int delayMs) {

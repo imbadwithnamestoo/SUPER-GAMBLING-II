@@ -39,6 +39,20 @@ void printBoxLine(const std::string& content, int boxWidth, int leftPadding) {
               << std::endl;
 }
 
+void printBoxLineLeft(const std::string& content, int boxWidth, int leftPadding) {
+    int contentLen = visibleLength(content);
+    int innerWidth = boxWidth - 2;
+    int rightSpace = innerWidth - contentLen - 1;
+    if (rightSpace < 0) rightSpace = 0;
+
+    std::cout << std::string(leftPadding, ' ')
+              << "║ "
+              << content
+              << std::string(rightSpace, ' ')
+              << "║"
+              << std::endl;
+}
+
 void printBlackjackUI(const std::vector<Card>& playerHand, const std::vector<Card>& dealerHand, const std::string& dealerDialogue, bool hideFirstCard, bool showFinal) {
     resetCursor();
     int termWidth = getTerminalWidth();

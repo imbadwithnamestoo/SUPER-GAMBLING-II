@@ -9,6 +9,7 @@
 #include "src/UI.h"
 #include "src/Shop.h"
 #include "src/Profile.h"
+#include "src/Achievements.h"
 #include "src/Player.h"
 #include "src/Utils.h"
 
@@ -42,33 +43,6 @@ void showIntro() {
     std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
     
     std::cout << std::string(leftPadding, ' ') << "Press Enter to continue...";
-    _getch();
-}
-
-void viewBadges() {
-    clear();
-    int termWidth = getTerminalWidth();
-    int boxWidth = std::min(60, termWidth - 4);
-    int leftPadding = (termWidth - boxWidth) / 2;
-    
-    std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
-    
-    std::string title = " ACHIEVEMENTS ";
-    printBoxLine(T_TITLE + title + T_RESET, boxWidth, leftPadding);
-    
-    std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
-    
-    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
-    printBoxLine("Coming Soon", boxWidth, leftPadding);
-    std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
-    
-    std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
-    
-    std::string hint = "Press Enter to return";
-    printBoxLine(hint, boxWidth, leftPadding);
-    
-    std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
-    
     _getch();
 }
 
@@ -106,10 +80,15 @@ int main() {
             std::string title = " SUPER GAMBLING II ";
             printBoxLine(T_TITLE + title + T_RESET, boxWidth, leftPadding);
 
-            std::string chipsDisplay = formatNumber(totalChips);
-            std::string debtDisplay = formatNumber(totalDebt);
-            std::string stats = " Chips: " + T_PRICE + chipsDisplay + T_RESET + " | Debt: " + T_LOSS + debtDisplay + T_RESET + " ";
-            printBoxLine(stats, boxWidth, leftPadding);
+            if (hasBeatenGame && !playerName.empty()) {
+                std::string stats = " " + playerName + " | Chips: " + T_PRICE + formatNumber(totalChips) + T_RESET + " ";
+                printBoxLine(stats, boxWidth, leftPadding);
+            } else {
+                std::string chipsDisplay = formatNumber(totalChips);
+                std::string debtDisplay = formatNumber(totalDebt);
+                std::string stats = " Chips: " + T_PRICE + chipsDisplay + T_RESET + " | Debt: " + T_LOSS + debtDisplay + T_RESET + " ";
+                printBoxLine(stats, boxWidth, leftPadding);
+            }
 
             std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
 

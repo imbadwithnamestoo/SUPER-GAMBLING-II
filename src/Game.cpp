@@ -2,6 +2,7 @@
 #include "UI.h"
 #include "Player.h"
 #include "Utils.h"
+#include "Dialogue.h"
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -10,6 +11,7 @@
 #include <limits>
 #include <random>
 #include <cstdio>
+#include <cctype>
 
 std::vector<Card> createDeck() {
     std::vector<Card> deck;
@@ -40,6 +42,52 @@ void shuffleDeck(std::vector<Card>& deck) {
 void dealCard(std::vector<Card>& deck, std::vector<Card>& hand) {
     hand.push_back(deck.back());
     deck.pop_back();
+}
+
+void dealCardBiased(std::vector<Card>& deck, std::vector<Card>& hand) {
+    Card card = deck.back();
+    deck.pop_back();
+
+    int score = calculateScore(hand);
+
+    if (score >= 14) {
+        if (std::rand() % 100 < 35) {
+            std::vector<size_t> safeIndices;
+            for (size_t i = 0; i < deck.size(); ++i) {
+                if (score + deck[i].value <= 21) {
+                    safeIndices.push_back(i);
+                }
+            }
+
+            if (!safeIndices.empty()) {
+                size_t pick = safeIndices[std::rand() % safeIndices.size()];
+                std::swap(deck[pick], card);
+            }
+        }
+    }
+
+    hand.push_back(card);
+}
+
+void dealDealerOpening(std::vector<Card>& deck, std::vector<Card>& hand) {
+    while (true) {
+        Card c1 = deck.back();
+        deck.pop_back();
+        Card c2 = deck.back();
+        deck.pop_back();
+
+        std::vector<Card> temp = {c1, c2};
+        int score = calculateScore(temp);
+
+        if (score != 20 && score != 21) {
+            hand.push_back(c1);
+            hand.push_back(c2);
+            return;
+        }
+
+        deck.insert(deck.begin(), c1);
+        deck.insert(deck.begin(), c2);
+    }
 }
 
 int calculateScore(const std::vector<Card>& hand) {
@@ -106,16 +154,11 @@ int placeBet(int maxBet) {
         std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
         
         std::cout << std::string(leftPadding, ' ') << "> ";
-        std::cin >> bet;
         
-        if (std::cin.fail()) {
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        if (!readInt(bet)) {
             clear();
             continue;
         }
-        
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         
         if (bet == 0) {
             return 0;
@@ -132,97 +175,6 @@ int placeBet(int maxBet) {
         }
     }
     return bet;
-}
-
-std::string pickRandom(const std::vector<std::string>& options) {
-    return options[std::rand() % options.size()];
-}
-
-std::string getOpeningLine() {
-    std::vector<std::string> lines = {
-        "Let's see what you've got.",
-        "Careful now, the deck is feeling cold.",
-        "The house always has an ace up its sleeve.",
-        "Feeling lucky today, kid?",
-        "Don't go blowing all your chips at once."
-    };
-    return pickRandom(lines);
-}
-
-std::string getAllInWinLine() {
-    std::vector<std::string> lines = {
-        "All in... and you won. Hm.",
-        "The whole stack. Doubled. Don't let it go to your head.",
-        "Bold. And lucky. Dangerous combination.",
-        "You just doubled your entire worth. Remember that feeling."
-    };
-    return pickRandom(lines);
-}
-
-std::string getAllInLossLine() {
-    std::vector<std::string> lines = {
-        "All in... and it's gone. All of it.",
-        "The whole stack. Down the drain.",
-        "That's the game, kid. Nothing left to bet.",
-        "Back to the bottom. Or the Black Market."
-    };
-    return pickRandom(lines);
-}
-
-std::string getDealerBustLine() {
-    std::vector<std::string> lines = {
-        "Busted. The deck turned on me.",
-        "Over. Take it. This round is yours.",
-        "Well. That's embarrassing.",
-        "The house breaks. Enjoy it while it lasts."
-    };
-    return pickRandom(lines);
-}
-
-std::string getWinLine(bool firstWin, bool hugeBet, int bet, int maxBet) {
-    if (firstWin) {
-        return "Beginner's luck. Enjoy it while it lasts.";
-    }
-    if (hugeBet) {
-        std::vector<std::string> lines = {
-            "...noted.",
-            "Hm. That's a big one.",
-            "The house remembers this.",
-            "Don't get used to it."
-        };
-        return pickRandom(lines);
-    }
-    std::vector<std::string> lines = {
-        "Got lucky.",
-        "You beat me clean. Nice hand.",
-        "Hmph. Enjoy it.",
-        "The deck likes you tonight."
-    };
-    return pickRandom(lines);
-}
-
-std::string getLossLine(bool firstLoss) {
-    if (firstLoss) {
-        return "Welcome to the real game.";
-    }
-    std::vector<std::string> lines = {
-        "House takes this round.",
-        "Better luck next time.",
-        "The deck is cold tonight.",
-        "You'll get 'em next hand."
-    };
-    return pickRandom(lines);
-}
-
-std::string getPushLine() {
-    std::vector<std::string> lines = {
-        "A push. We trade even.",
-        "Tie. Nobody wins, nobody loses.",
-        "Dead even. How boring.",
-        "A wash. Try again.",
-        "Same score. The house shrugs."
-    };
-    return pickRandom(lines);
 }
 
 bool playEndingSequence() {
@@ -269,6 +221,41 @@ bool playEndingSequence() {
     std::cout << std::string(leftPadding, ' ') << "Press Enter to continue...";
     _getch();
 
+    if (playerName.empty()) {
+        clear();
+        resetCursor();
+        
+        std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
+        std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+        printBoxLine(T_INFO + "What do we call you?" + T_RESET, boxWidth, leftPadding);
+        std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+        std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+        
+        std::cout << std::string(leftPadding, ' ') << "> ";
+        
+        std::string rawInput;
+        std::getline(std::cin, rawInput);
+        
+        std::string clean = sanitizeName(rawInput);
+        if (clean.empty()) {
+            clean = "Kid";
+        }
+        playerName = clean;
+        
+        clear();
+        resetCursor();
+        
+        std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
+        std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+        printBoxLine(T_INFO + playerName + "." + T_RESET, boxWidth, leftPadding);
+        printBoxLine(T_INFO + "I'll remember it." + T_RESET, boxWidth, leftPadding);
+        std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+        std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+        
+        std::cout << std::string(leftPadding, ' ') << "Press Enter to continue...";
+        _getch();
+    }
+
     return true;
 }
 
@@ -278,6 +265,7 @@ void playBlackjackGame() {
     if (totalDebt <= 0 && !hasBeatenGame) {
         playEndingSequence();
         hasBeatenGame = true;
+        if (!hasAchievement("debt_free")) unlockAchievement("debt_free");
         saveGame();
         return;
     }
@@ -287,7 +275,38 @@ void playBlackjackGame() {
         int termWidth = getTerminalWidth();
         int boxWidth = std::min(70, termWidth - 4);
         int leftPadding = (termWidth - boxWidth) / 2;
-        
+
+        if (housesMercyCount > 0) {
+            housesMercyCount--;
+            if (hasBeatenGame) {
+                totalChips = 1000;
+            } else {
+                totalChips = 250;
+                totalDebt += 25000;
+            }
+            saveGame();
+
+            std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
+            std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+            std::string line1 = "The house isn't done with you yet.";
+            printBoxLine(T_INFO + line1 + T_RESET, boxWidth, leftPadding);
+            std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+            std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+            std::cout << std::string(leftPadding, ' ') << "Press Enter to continue...";
+            _getch();
+
+            clear();
+            std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
+            std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+            std::string line2 = hasBeatenGame ? "+1000 Chips." : "+250 Chips. +25000 Debt.";
+            printBoxLine(T_LOSS + line2 + T_RESET, boxWidth, leftPadding);
+            std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
+            std::cout << std::string(leftPadding, ' ') << "╚" << repeatStr("═", boxWidth - 2) << "╝" << std::endl;
+            std::cout << std::string(leftPadding, ' ') << "Press Enter to continue...";
+            _getch();
+            return;
+        }
+
         std::cout << std::string(leftPadding, ' ') << "╔" << repeatStr("═", boxWidth - 2) << "╗" << std::endl;
         std::cout << std::string(leftPadding, ' ') << "║" << std::string(boxWidth - 2, ' ') << "║" << std::endl;
         
@@ -309,7 +328,14 @@ void playBlackjackGame() {
         return;
     }
     
+    flushInput();
+    
     totalChips -= currentBet;
+    totalWagered += currentBet;
+    if (currentBet == maxBet) {
+        allInsMade++;
+        if (!hasAchievement("all_in")) unlockAchievement("all_in");
+    }
     saveGame();
 
     bool isAllIn = (currentBet == maxBet);
@@ -323,34 +349,14 @@ void playBlackjackGame() {
     std::vector<Card> playerHand;
     std::vector<Card> dealerHand;
 
-    dealCard(deck, playerHand);
+    dealCardBiased(deck, playerHand);
     dealCard(deck, dealerHand);
-    dealCard(deck, playerHand);
-    dealCard(deck, dealerHand);
+    dealCardBiased(deck, playerHand);
+    dealDealerOpening(deck, dealerHand);
 
-    std::string dealerDialogue;
-    
-    if (isAllIn) {
-        std::vector<std::string> lines = {
-            "All in? Bold. Stupid, but bold.",
-            "Everything on the line. I like it.",
-            "All in. Let's see if you've got the nerve.",
-            "Going for broke? Fine by me."
-        };
-        dealerDialogue = pickRandom(lines);
-    } else if (isMinBet) {
-        std::vector<std::string> lines = {
-            "Really? That's your play?",
-            "One chip. You're really going for it.",
-            "Playing it safe, huh?",
-            "A single chip. Bold strategy."
-        };
-        dealerDialogue = pickRandom(lines);
-    } else if (isTwoBet) {
-        dealerDialogue = "Ah, two chips. You've clearly heard the one-chip line before.";
-    } else {
-        dealerDialogue = getOpeningLine();
-    }
+    flushInput();
+
+    std::string dealerDialogue = getOpeningLine(isAllIn, isMinBet, isTwoBet, hasBeatenGame);
 
     int selectedOption = 1;
     int boxWidth = 0;
@@ -428,7 +434,7 @@ void playBlackjackGame() {
             }
         } else if (input == 13 || input == 10) {
             if (selectedOption == 1) {
-                dealCard(deck, playerHand);
+                dealCardBiased(deck, playerHand);
                 dealerDialogue = "Taking another card? Bold move.";
                 selectedOption = 1;
             } else if (selectedOption == 2) {
@@ -443,14 +449,38 @@ void playBlackjackGame() {
 
     int playerScore = calculateScore(playerHand);
     gamesPlayed++;
+    
+    if (!hasAchievement("first_steps")) unlockAchievement("first_steps");
+    
+    if (isBlackjack(playerHand)) {
+        blackjacksHit++;
+        if (!hasAchievement("twenty_one")) unlockAchievement("twenty_one");
+        if (blackjacksHit >= 10 && !hasAchievement("twice_as_nice")) unlockAchievement("twice_as_nice");
+    }
 
     if (playerScore > 21) {
         gamesLost++;
+        playerBusts++;
+        currentLossStreak++;
+        currentWinStreak = 0;
+        if (currentLossStreak > longestLossStreak) longestLossStreak = currentLossStreak;
+        
+        if (!hasAchievement("bust")) unlockAchievement("bust");
+        if (!hasAchievement("first_loss")) unlockAchievement("first_loss");
+        if (currentLossStreak >= 5 && !hasAchievement("rough_night")) unlockAchievement("rough_night");
+        if (currentLossStreak >= 10 && !hasAchievement("rock_bottom")) unlockAchievement("rock_bottom");
+        
+        int lossAmount = currentBet;
+        totalChipsLost += lossAmount;
+        if (lossAmount > biggestLoss) biggestLoss = lossAmount;
+        
+        if (totalChipsLost >= 100000 && !hasAchievement("house_always_wins")) unlockAchievement("house_always_wins");
+        
         bool firstLoss = (gamesLost == 1);
         if (isAllIn) {
-            dealerDialogue = getAllInLossLine();
+            dealerDialogue = getAllInLossLine(hasBeatenGame);
         } else {
-            dealerDialogue = getLossLine(firstLoss);
+            dealerDialogue = getLossLine(firstLoss, isHugeBet, hasBeatenGame);
         }
         if (hasInsurancePolicy) {
             int refund = currentBet / 10;
@@ -473,7 +503,7 @@ void playBlackjackGame() {
     printBlackjackUI(playerHand, dealerHand, dealerDialogue, false, false);
     wait(1000);
 
-    while (calculateScore(dealerHand) < 17) {
+    while (calculateScore(dealerHand) < 16) {
         dealerDialogue = "Dealer hits...";
         dealCard(deck, dealerHand);
         printBlackjackUI(playerHand, dealerHand, dealerDialogue, false, false);
@@ -484,34 +514,96 @@ void playBlackjackGame() {
 
     if (dealerScore > 21) {
         gamesWon++;
+        dealerBusts++;
+        currentWinStreak++;
+        currentLossStreak = 0;
+        if (currentWinStreak > longestWinStreak) longestWinStreak = currentWinStreak;
+        
+        if (!hasAchievement("first_win")) unlockAchievement("first_win");
+        if (currentWinStreak >= 5 && !hasAchievement("on_a_roll")) unlockAchievement("on_a_roll");
+        if (currentWinStreak >= 10 && !hasAchievement("unstoppable")) unlockAchievement("unstoppable");
+        if (currentWinStreak >= 20 && !hasAchievement("house_watching")) unlockAchievement("house_watching");
+        
+        if (isAllIn && !hasAchievement("yolo")) unlockAchievement("yolo");
+        
         if (isAllIn) {
-            dealerDialogue = getAllInWinLine();
+            dealerDialogue = getAllInWinLine(hasBeatenGame);
         } else {
-            dealerDialogue = getDealerBustLine();
+            dealerDialogue = getDealerBustLine(hasBeatenGame);
         }
-        int winnings = currentBet * 2;
+        int winnings = (currentBet * 5 + 1) / 2;
         if (hasLuckyCharm) winnings += winnings / 10;
+        if (hasLuckyStreak) {
+            int streakBonus = std::min(currentWinStreak, 5) * 10;
+            winnings += winnings * streakBonus / 100;
+        }
         totalChips += winnings;
+        totalChipsWon += (winnings - currentBet);
+        if ((winnings - currentBet) > biggestWin) biggestWin = winnings - currentBet;
+        if (totalChips > highestChipsEver) highestChipsEver = totalChips;
+        
+        if (totalChips >= 1000 && !hasAchievement("pocket_change")) unlockAchievement("pocket_change");
+        if (totalChips >= 10000 && !hasAchievement("comfortable")) unlockAchievement("comfortable");
+        if (totalChips >= 100000 && !hasAchievement("high_roller")) unlockAchievement("high_roller");
+        if (totalChips >= 1000000 && !hasAchievement("millionaire")) unlockAchievement("millionaire");
+        
         saveGame();
     } else if (playerScore > dealerScore) {
         gamesWon++;
+        currentWinStreak++;
+        currentLossStreak = 0;
+        if (currentWinStreak > longestWinStreak) longestWinStreak = currentWinStreak;
+        
+        if (!hasAchievement("first_win")) unlockAchievement("first_win");
+        if (currentWinStreak >= 5 && !hasAchievement("on_a_roll")) unlockAchievement("on_a_roll");
+        if (currentWinStreak >= 10 && !hasAchievement("unstoppable")) unlockAchievement("unstoppable");
+        if (currentWinStreak >= 20 && !hasAchievement("house_watching")) unlockAchievement("house_watching");
+        
+        if (isAllIn && !hasAchievement("yolo")) unlockAchievement("yolo");
+        
         bool firstWin = (gamesWon == 1);
         if (isAllIn) {
-            dealerDialogue = getAllInWinLine();
+            dealerDialogue = getAllInWinLine(hasBeatenGame);
         } else {
-            dealerDialogue = getWinLine(firstWin, isHugeBet, currentBet, maxBet);
+            dealerDialogue = getWinLine(firstWin, isHugeBet, hasBeatenGame);
         }
         int winnings = currentBet * 2;
         if (hasLuckyCharm) winnings += winnings / 10;
+        if (hasLuckyStreak) {
+            int streakBonus = std::min(currentWinStreak, 5) * 10;
+            winnings += winnings * streakBonus / 100;
+        }
         totalChips += winnings;
+        totalChipsWon += (winnings - currentBet);
+        if ((winnings - currentBet) > biggestWin) biggestWin = winnings - currentBet;
+        if (totalChips > highestChipsEver) highestChipsEver = totalChips;
+        
+        if (totalChips >= 1000 && !hasAchievement("pocket_change")) unlockAchievement("pocket_change");
+        if (totalChips >= 10000 && !hasAchievement("comfortable")) unlockAchievement("comfortable");
+        if (totalChips >= 100000 && !hasAchievement("high_roller")) unlockAchievement("high_roller");
+        if (totalChips >= 1000000 && !hasAchievement("millionaire")) unlockAchievement("millionaire");
+        
         saveGame();
     } else if (playerScore < dealerScore) {
         gamesLost++;
+        currentLossStreak++;
+        currentWinStreak = 0;
+        if (currentLossStreak > longestLossStreak) longestLossStreak = currentLossStreak;
+        
+        if (!hasAchievement("first_loss")) unlockAchievement("first_loss");
+        if (currentLossStreak >= 5 && !hasAchievement("rough_night")) unlockAchievement("rough_night");
+        if (currentLossStreak >= 10 && !hasAchievement("rock_bottom")) unlockAchievement("rock_bottom");
+        
+        totalChipsLost += currentBet;
+        if (currentBet > biggestLoss) biggestLoss = currentBet;
+        
+        if (totalChipsLost >= 100000 && !hasAchievement("house_always_wins")) unlockAchievement("house_always_wins");
+        
         bool firstLoss = (gamesLost == 1);
         if (isAllIn) {
-            dealerDialogue = getAllInLossLine();
+            dealerDialogue = getAllInLossLine(hasBeatenGame);
         } else {
-            dealerDialogue = getLossLine(firstLoss);
+            dealerDialogue = getLossLine(firstLoss, isHugeBet, hasBeatenGame);
         }
         if (hasInsurancePolicy) {
             int refund = currentBet / 10;
@@ -519,7 +611,11 @@ void playBlackjackGame() {
         }
         saveGame();
     } else {
-        dealerDialogue = getPushLine();
+        pushes++;
+        currentWinStreak = 0;
+        currentLossStreak = 0;
+        if (!hasAchievement("first_push")) unlockAchievement("first_push");
+        dealerDialogue = getPushLine(hasBeatenGame);
         totalChips += currentBet;
         saveGame();
     }

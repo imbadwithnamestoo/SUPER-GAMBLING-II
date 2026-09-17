@@ -28,14 +28,20 @@ void openStore() {
         
         std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
         
-        std::string luckyCharmDisplay = hasLuckyCharm ? "Lucky Charm [OWNED]" : "Lucky Charm [500 Chips]";
+        int mercyCost = hasBeatenGame ? 10000 : 10000 * (1 << housesMercyCount);
+        
+        std::string luckyCharmDisplay = hasLuckyCharm ? "Lucky Charm [OWNED]" : "Lucky Charm [2000 Chips]";
+        std::string luckyStreakDisplay = hasLuckyStreak ? "Lucky Streak [OWNED]" : "Lucky Streak [3500 Chips]";
         std::string cardCounterDisplay = "Card Counter [1000 Chips] x" + std::to_string(cardCounterCount);
         std::string insuranceDisplay = hasInsurancePolicy ? "Insurance Policy [OWNED]" : "Insurance Policy [2000 Chips]";
+        std::string mercyDisplay = "House's Mercy [" + std::to_string(mercyCost) + " Chips] x" + std::to_string(housesMercyCount);
         
         std::vector<std::string> items = {
             luckyCharmDisplay,
+            luckyStreakDisplay,
             cardCounterDisplay,
             insuranceDisplay,
+            mercyDisplay,
             "Return"
         };
         
@@ -84,13 +90,13 @@ void openStore() {
             }
             if (arrow == 72 || arrow == 'A') {
                 if (selected > 1) selected--;
-                else selected = 4;
+                else selected = 6;
             } else if (arrow == 80 || arrow == 'B') {
-                if (selected < 4) selected++;
+                if (selected < 6) selected++;
                 else selected = 1;
             }
         } else if (input == 13 || input == 10) {
-            if (selected == 4) {
+            if (selected == 6) {
                 inStore = false;
             } else {
                 clear();
@@ -109,20 +115,34 @@ void openStore() {
                     
                     if (selected == 1) {
                         printBoxLine("Lucky Charm", boxWidth, leftPadding);
-                        printBoxLine("Cost: 500 Chips", boxWidth, leftPadding);
+                        printBoxLine("Cost: 2000 Chips", boxWidth, leftPadding);
                         printBoxLine("Type: Passive", boxWidth, leftPadding);
                         printBoxLine("Effect: +10% bonus on all wins", boxWidth, leftPadding);
                     } else if (selected == 2) {
+                        printBoxLine("Lucky Streak", boxWidth, leftPadding);
+                        printBoxLine("Cost: 3500 Chips", boxWidth, leftPadding);
+                        printBoxLine("Type: Passive", boxWidth, leftPadding);
+                        printBoxLine("Effect: +10% per win streak", boxWidth, leftPadding);
+                        printBoxLine("Cap: +50% (5 wins)", boxWidth, leftPadding);
+                        printBoxLine("Resets on loss or push", boxWidth, leftPadding);
+                    } else if (selected == 3) {
                         printBoxLine("Card Counter", boxWidth, leftPadding);
                         printBoxLine("Cost: 1000 Chips", boxWidth, leftPadding);
                         printBoxLine("Type: One-time", boxWidth, leftPadding);
                         printBoxLine("Effect: Reveal dealer's hidden card", boxWidth, leftPadding);
                         printBoxLine("Owned: x" + std::to_string(cardCounterCount), boxWidth, leftPadding);
-                    } else if (selected == 3) {
+                    } else if (selected == 4) {
                         printBoxLine("Insurance Policy", boxWidth, leftPadding);
                         printBoxLine("Cost: 2000 Chips", boxWidth, leftPadding);
                         printBoxLine("Type: Passive", boxWidth, leftPadding);
                         printBoxLine("Effect: Refund 10% of lost bets", boxWidth, leftPadding);
+                    } else if (selected == 5) {
+                        printBoxLine("House's Mercy", boxWidth, leftPadding);
+                        printBoxLine("Cost: " + std::to_string(mercyCost) + " Chips", boxWidth, leftPadding);
+                        printBoxLine("Type: One-time", boxWidth, leftPadding);
+                        printBoxLine("Effect: Survive bankruptcy once", boxWidth, leftPadding);
+                        printBoxLine("+250 Chips, +25000 Debt", boxWidth, leftPadding);
+                        printBoxLine("Owned: x" + std::to_string(housesMercyCount), boxWidth, leftPadding);
                     }
                     
                     std::cout << std::string(leftPadding, ' ') << "╠" << repeatStr("═", boxWidth - 2) << "╣" << std::endl;
@@ -175,11 +195,15 @@ void openStore() {
                     } else if (input2 == 13 || input2 == 10) {
                         if (subSelected == 1) {
                             int cost = 0;
-                            if (selected == 1) cost = 500;
-                            else if (selected == 2) cost = 1000;
-                            else if (selected == 3) cost = 2000;
+                            if (selected == 1) cost = 2000;
+                            else if (selected == 2) cost = 3500;
+                            else if (selected == 3) cost = 1000;
+                            else if (selected == 4) cost = 2000;
+                            else if (selected == 5) cost = mercyCost;
                             
-                            bool alreadyOwned = (selected == 1 && hasLuckyCharm) || (selected == 3 && hasInsurancePolicy);
+                            bool alreadyOwned = (selected == 1 && hasLuckyCharm) 
+                                              || (selected == 2 && hasLuckyStreak) 
+                                              || (selected == 4 && hasInsurancePolicy);
                             
                             if (alreadyOwned) {
                                 clear();
@@ -195,8 +219,10 @@ void openStore() {
                             } else if (totalChips >= cost) {
                                 totalChips -= cost;
                                 if (selected == 1) hasLuckyCharm = true;
-                                else if (selected == 2) cardCounterCount++;
-                                else if (selected == 3) hasInsurancePolicy = true;
+                                else if (selected == 2) hasLuckyStreak = true;
+                                else if (selected == 3) cardCounterCount++;
+                                else if (selected == 4) hasInsurancePolicy = true;
+                                else if (selected == 5) housesMercyCount++;
                                 saveGame();
                                 clear();
                                 resetCursor();
